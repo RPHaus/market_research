@@ -1,8 +1,19 @@
 import pandas as pd
 import streamlit as st
+from api.twitter_api import fetch_twitter_trends
+from api.reddit_api import fetch_reddit_posts
 
-# Funktion zum Abrufen aller Trends
-data = fetch_all_trends()
+# API-Schlüssel und Tokens (diese solltest du sicher verwahren oder per .env-Datei einbinden)
+twitter_bearer_token = "DEIN_TWITTER_BEARER_TOKEN"
+reddit_client_id = "DEIN_REDDIT_CLIENT_ID"
+reddit_secret_token = "DEIN_REDDIT_SECRET_TOKEN"
+
+# Daten abrufen
+twitter_data = fetch_twitter_trends(twitter_bearer_token)
+reddit_data = fetch_reddit_posts(reddit_client_id, reddit_secret_token)
+
+# Daten kombinieren
+data = twitter_data + reddit_data
 
 # Kategorien-Erkennung (wie zuvor)
 def categorize_text(text):
@@ -18,7 +29,7 @@ def categorize_text(text):
             return category
     return "Sonstiges"
 
-# Daten verarbeiten und kategorisieren
+# Daten in DataFrame umwandeln
 df = pd.DataFrame(data)
 df["category"] = df["text"].apply(categorize_text)
 
