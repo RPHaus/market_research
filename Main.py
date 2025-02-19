@@ -1,13 +1,40 @@
 import pandas as pd
 import streamlit as st
-from api.twitter_api import fetch_twitter_trends
 from api.reddit_api import generate_auth_url, handle_reddit_auth, get_reddit_posts
+from api.reddit_trends import extract_shopping_trends
 from decouple import config
+
+# Funktion zur Kategorisierung von Trends
+def categorize_trends(trends):
+    """
+    Kategorisiert die identifizierten Shopping-Trends in typische Kategorien.
+
+    Parameters:
+        trends (dict): Häufigkeitsanalyse der Shopping-Trends.
+
+    Returns:
+        dict: Kategorisierte Trends mit den zugehörigen Stichwörtern und deren Häufigkeit.
+    """
+    categories = {
+        "Rabatte": ["sale", "deal", "discount", "bargain"],
+        "Neue Produkte": ["new product", "new release", "latest"],
+        "Preisvergleiche": ["price", "compare", "comparison", "cheaper", "cost"],
+        "Allgemeine Angebote": ["buy", "offer", "available", "promotion"],
+    }
+
+    categorized_trends = {category: {} for category in categories}
+
+    # Iteriere über die identifizierten Trends und ordne sie den Kategorien zu
+    for trend, count in trends.items():
+        for category, keywords in categories.items():
+            if trend in keywords:
+                categorized_trends[category][trend] = count
+
+    return categorized_trends
 
 ### Authentifizierung REDDIT START ###
 # Streamlit-Seite
-st.title("Reddit OAuth2-Login")
-st.write("Klicke auf den untenstehenden Link, um dich bei Reddit anzumelden.")
+st.title("Reddit Shopping Trends")
 
 # 1. OAuth2 URL generieren und anzeigen
 auth_url = generate_auth_url()
@@ -23,19 +50,34 @@ if code:
 
     if token:
         st.write("Erfolgreich authentifiziert!")
-        st.write(f"Dein Reddit-Access-Token lautet: {token}")
+        
+        # 4. Daten aus einem Subreddit abrufen (z. B. r/shopping)
+        subreddit = "shopping"  # Du kannst auch andere Subreddits verwenden
+        st.write(f"Abrufen von Posts aus dem Subreddit: {subreddit}")
+        posts = get_reddit_posts(subreddit, token, limit=50)
+
+        if posts:
+            st.write(f"{len(posts)} Posts abgerufen.")
+            
+            # 5. Shopping-Trends analysieren
+            trends = extract_shopping_trends(posts)
+
+            # 6. Ergebnisse anzeigen
+            st.subheader("Identifizierte Shopping-Trends:")
+            if trends:
+                for trend, count in trends.items():
+                    st.write(f"- {trend}: {count} Erwähnungen")
+            else:
+                st.write("Keine Shopping-Trends gefunden.")
+        else:
+            st.write("Keine Posts abgerufen.")
     else:
         st.write("Fehler bei der Token-Anforderung!")
         
 ### Authentifizierung REDDIT END ###
 
-
-# Daten abrufen
-twitter_data = fetch_twitter_trends(twitter_bearer_token)
-reddit_data = fetch_reddit_posts(reddit_client_id, reddit_secret_token)
-
 # Daten kombinieren
-data = twitter_data + reddit_data
+data = reddit_data
 
 # Kategorien-Erkennung (wie zuvor)
 def categorize_text(text):
