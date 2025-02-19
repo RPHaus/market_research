@@ -1,14 +1,35 @@
 import pandas as pd
 import streamlit as st
 from api.twitter_api import fetch_twitter_trends
+from api.reddit_api import generate_auth_url, handle_reddit_auth
 from api.reddit_api import fetch_reddit_posts
 from decouple import config
 
-# API-Schlüssel aus der .env-Datei laden
-twitter_bearer_token = config("TWITTER_BEARER_TOKEN")
-reddit_client_id = config("REDDIT_CLIENT_ID")
-reddit_secret_token = config("REDDIT_SECRET_TOKEN")
-instagram_access_token = config("INSTAGRAM_ACCESS_TOKEN")
+### Authentifizierung REDDIT START ###
+# Streamlit-Seite
+st.title("Reddit OAuth2-Login")
+st.write("Klicke auf den untenstehenden Link, um dich bei Reddit anzumelden.")
+
+# 1. OAuth2 URL generieren und anzeigen
+auth_url = generate_auth_url()
+st.markdown(f"[Bei Reddit anmelden]({auth_url})")
+
+# 2. Den Auth-Code aus der URL abfangen
+code = st.experimental_get_query_params().get("code", [None])[0]  # Den 'code'-Parameter aus der URL lesen
+
+# 3. Wenn ein Code vorhanden ist, hole das Access Token
+if code:
+    st.write("Code erhalten! Hole Access-Token...")
+    token = handle_reddit_auth(code)
+
+    if token:
+        st.write("Erfolgreich authentifiziert!")
+        st.write(f"Dein Reddit-Access-Token lautet: {token}")
+    else:
+        st.write("Fehler bei der Token-Anforderung!")
+        
+### Authentifizierung REDDIT END ###
+
 
 # Daten abrufen
 twitter_data = fetch_twitter_trends(twitter_bearer_token)
