@@ -1,31 +1,52 @@
 import requests
 from decouple import config
 
-def authenticate_reddit():
-    """Authentifiziert sich bei Reddit und gibt das Token zurück."""
-    
-    # Lade die Anmeldedaten aus der .env-Datei
+def get_access_token(auth_code):
+    """
+    Tauscht einen erhaltenen Autorisierungs-Code gegen ein Access Token aus, 
+    um auf die Reddit API zuzugreifen.
+
+    Parameters:
+        auth_code (str): Der Code, den Reddit nach erfolgreicher Anmeldung 
+                         und Autorisierung zurückgibt.
+
+    Returns:
+        str: Das Access Token, wenn die Anfrage erfolgreich ist. 
+             Andernfalls None.
+    """
+    # Lade die Reddit Client-ID und das Secret Token aus der .env-Datei
     client_id = config("REDDIT_CLIENT_ID")
     secret_token = config("REDDIT_SECRET_TOKEN")
-    username = config("REDDIT_USERNAME")
-    password = config("REDDIT_PASSWORD")
     
-    # Authentifizierung bei Reddit (OAuth2 mit "password"-Grant-Type)
+    # Die Redirect URI, die bei der App-Registrierung auf Reddit angegeben wurde
+    # Diese muss mit der URI übereinstimmen, die beim Abrufen des Auth-Codes verwendet wurde
+    redirect_uri = "http://localhost:8501"  # Lokale Entwicklung oder Cloud-URL
+
+    # Erstelle die HTTP-Basic-Authentifizierung mit Client ID und Secret Token
+    # Diese Methode wird benötigt, um Reddit mitzuteilen, dass die App berechtigt ist
+    # ein Token anzufordern.
     auth = requests.auth.HTTPBasicAuth(client_id, secret_token)
+
+    # Daten, die für die Access Token-Anfrage benötigt werden
     data = {
-        "grant_type": "password",
-        "username": username,
-        "password": password
+        "grant_type": "authorization_code",  # OAuth2 Grant-Typ
+        "code": auth_code,                  # Der erhaltene Autorisierungs-Code
+        "redirect_uri": redirect_uri        # Die bei der App-Registrierung hinterlegte Redirect URI
     }
+
+    # Header für die Anfrage. Der User-Agent sollte eine kurze Beschreibung der App enthalten.
     headers = {"User-Agent": "ShoppingTrendApp/0.1"}
-    
-    # Token-Request
-    response = requests.post("https://www.reddit.com/api/v1/access_token", auth=auth, data=data, headers=headers)
-    
-    # Überprüfe, ob die Authentifizierung erfolgreich war
+
+    # Sende eine POST-Anfrage an die Reddit-API, um das Access Token zu erhalten
+    response = requests.post("https://www.reddit.com/api/v1/access_token", 
+                             auth=auth, data=data, headers=headers)
+
+    # Überprüfe, ob die Anfrage erfolgreich war (Statuscode 200)
     if response.status_code == 200:
+        # Extrahiere das Access Token aus der JSON-Antwort und gib es zurück
         token = response.json().get("access_token")
         return token
     else:
-        print(f"Fehler bei der Authentifizierung: {response.status_code}")
+        # Bei einem Fehler den Statuscode ausgeben und None zurückgeben
+        print(f"Fehler bei der Token-Anforderung: {response.status_code}")
         return None
