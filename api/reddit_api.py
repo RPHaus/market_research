@@ -20,7 +20,7 @@ def get_access_token(auth_code):
     
     # Die Redirect URI, die bei der App-Registrierung auf Reddit angegeben wurde
     # Diese muss mit der URI übereinstimmen, die beim Abrufen des Auth-Codes verwendet wurde
-    redirect_uri = config("REDDIT_REDIRECT_URI")  # Lokale Entwicklung oder Cloud-URL
+    redirect_uri = config("REDDIT_REDIRECT_URI")  # APP URI von REDDIT
 
     # Erstelle die HTTP-Basic-Authentifizierung mit Client ID und Secret Token
     # Diese Methode wird benötigt, um Reddit mitzuteilen, dass die App berechtigt ist
