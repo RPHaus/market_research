@@ -1,8 +1,7 @@
 import pandas as pd
 import streamlit as st
 from api.twitter_api import fetch_twitter_trends
-from api.reddit_api import generate_auth_url, handle_reddit_auth
-from api.reddit_api import fetch_reddit_posts
+from api.reddit_api import generate_auth_url, handle_reddit_auth, get_reddit_posts
 from decouple import config
 
 ### Authentifizierung REDDIT START ###
